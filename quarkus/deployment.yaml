@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quarkus-kafka-oauth
+  labels:
+    app: quarkus-kafka-oauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quarkus-kafka-oauth
+  template:
+    metadata:
+      labels:
+        app: quarkus-kafka-oauth
+    spec:
+      containers:
+      - name: quarkus-kafka-oauth
+        image: image-registry.openshift-image-registry.svc:5000/qkk/quarkus-kafka-oauth:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-kafka-bootstrap:9094"
+        - name: KAFKA_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kafka-oauth-secret
+              key: client-secret
+        - name: KEYCLOAK_TOKEN_ENDPOINT
+          value: "https://keycloak-qkk.apps.ocp4.klaassen.click/realms/kafka/protocol/openid-connect/token"
+        - name: OAUTH_TRUSTSTORE_LOCATION
+          value: "/etc/truststore/truststore.p12"
+        - name: OAUTH_TRUSTSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-truststore-secret
+              key: password
+        - name: OAUTH_TRUSTSTORE_TYPE
+          value: "PKCS12"
+        - name: KAFKA_TRUSTSTORE_LOCATION
+          value: "/etc/kafka-truststore/truststore.p12"
+        - name: KAFKA_TRUSTSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kafka-truststore-secret
+              key: password
+        - name: KAFKA_TRUSTSTORE_TYPE
+          value: "PKCS12"
+        volumeMounts:
+        - name: oauth-truststore
+          mountPath: /etc/truststore
+          readOnly: true
+        - name: kafka-truststore
+          mountPath: /etc/kafka-truststore
+          readOnly: true
+      volumes:
+      - name: oauth-truststore
+        secret:
+          secretName: keycloak-truststore-secret
+      - name: kafka-truststore
+        secret:
+          secretName: kafka-truststore-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quarkus-kafka-oauth
+  labels:
+    app: quarkus-kafka-oauth
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  selector:
+    app: quarkus-kafka-oauth
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: quarkus-kafka-oauth
+spec:
+  to:
+    kind: Service
+    name: quarkus-kafka-oauth
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+

@@ -1,0 +1,23 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:  
+  name: keycloak
+spec:
+  db:
+    host: postgres-db
+    passwordSecret:
+      key: password
+      name: keycloak-db-secret
+    usernameSecret:
+      key: username
+      name: keycloak-db-secret
+    vendor: postgres
+  hostname:
+    hostname: keycloak-qkk.apps.ocp4.klaassen.click
+  http:
+    tlsSecret: keycloak-tls-secret
+  ingress:
+    className: openshift-default
+  instances: 1
+  proxy:
+    headers: xforwarded

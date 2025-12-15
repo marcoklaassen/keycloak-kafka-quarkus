@@ -1,0 +1,10 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: quarkus-kafka-oauth
+  labels:
+    app: quarkus-kafka-oauth
+spec:
+  lookupPolicy:
+    local: true
+

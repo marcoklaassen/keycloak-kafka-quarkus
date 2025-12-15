@@ -1,0 +1,26 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: quarkus-kafka-oauth
+  labels:
+    app: quarkus-kafka-oauth
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.native
+  output:
+    to:
+      kind: ImageStreamTag
+      name: quarkus-kafka-oauth:latest
+  resources:
+    limits:
+      cpu: "4"
+      memory: 8Gi
+    requests:
+      cpu: "2"
+      memory: 4Gi
+  runPolicy: Serial
+

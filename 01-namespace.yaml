@@ -1,0 +1,11 @@
+kind: Project
+apiVersion: project.openshift.io/v1
+metadata:
+  name: qkk  
+  labels:
+    kubernetes.io/metadata.name: qkk    
+  annotations:
+    openshift.io/description: ''
+    openshift.io/display-name: Quarkus Kafka Keycloak    
+spec: {}
+

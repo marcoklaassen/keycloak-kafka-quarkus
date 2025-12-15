@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Kafka ACL Configuration Script
+# This script sets up ACLs for the Kafka client to consume and produce messages
+
+set -e
+
+KAFKA_BOOTSTRAP="${KAFKA_BOOTSTRAP:-kafka-kafka-bootstrap:9094}"
+CLIENT_ID="${CLIENT_ID:-quarkus-kafka-client}"
+SOURCE_TOPIC="${SOURCE_TOPIC:-my-source-events}"
+TARGET_TOPIC="${TARGET_TOPIC:-my-target-events}"
+GROUP_ID="${GROUP_ID:-quarkus-event-processor-group}"
+NAMESPACE="${NAMESPACE:-qkk}"
+
+echo "========================================="
+echo "Kafka ACL Configuration Script"
+echo "========================================="
+echo "Kafka Bootstrap: $KAFKA_BOOTSTRAP"
+echo "Client ID: $CLIENT_ID"
+echo "Source Topic: $SOURCE_TOPIC"
+echo "Target Topic: $TARGET_TOPIC"
+echo "Consumer Group: $GROUP_ID"
+echo ""
+
+# Note: This script assumes you're using OAuth authentication
+# For OAuth, ACLs are typically managed through Keycloak groups or roles
+# This is a placeholder script - actual ACL setup depends on your Kafka authorization configuration
+
+echo "Setting up ACLs for OAuth-based authentication..."
+echo ""
+echo "For OAuth authentication, you typically need to:"
+echo "1. Create a service account in Keycloak for the client"
+echo "2. Assign roles/groups to the service account"
+echo "3. Configure Kafka to map OAuth claims to ACLs"
+echo ""
+echo "Example ACL commands (if using simple authorization):"
+echo ""
+echo "# Allow consumer group access"
+echo "kubectl run kafka-acl-setup -n $NAMESPACE \\"
+echo "  --image=quay.io/strimzi/kafka:latest-kafka-4.0.0 \\"
+echo "  --rm -i --restart=Never -- \\"
+echo "  bin/kafka-acls.sh \\"
+echo "  --bootstrap-server $KAFKA_BOOTSTRAP \\"
+echo "  --command-config /tmp/kafka.properties \\"
+echo "  --add \\"
+echo "  --allow-principal User:$CLIENT_ID \\"
+echo "  --operation Read \\"
+echo "  --group $GROUP_ID"
+echo ""
+echo "# Allow read from source topic"
+echo "kubectl run kafka-acl-source-read -n $NAMESPACE \\"
+echo "  --image=quay.io/strimzi/kafka:latest-kafka-4.0.0 \\"
+echo "  --rm -i --restart=Never -- \\"
+echo "  bin/kafka-acls.sh \\"
+echo "  --bootstrap-server $KAFKA_BOOTSTRAP \\"
+echo "  --command-config /tmp/kafka.properties \\"
+echo "  --add \\"
+echo "  --allow-principal User:$CLIENT_ID \\"
+echo "  --operation Read \\"
+echo "  --topic $SOURCE_TOPIC"
+echo ""
+echo "# Allow write to target topic"
+echo "kubectl run kafka-acl-target-write -n $NAMESPACE \\"
+echo "  --image=quay.io/strimzi/kafka:latest-kafka-4.0.0 \\"
+echo "  --rm -i --restart=Never -- \\"
+echo "  bin/kafka-acls.sh \\"
+echo "  --bootstrap-server $KAFKA_BOOTSTRAP \\"
+echo "  --command-config /tmp/kafka.properties \\"
+echo "  --add \\"
+echo "  --allow-principal User:$CLIENT_ID \\"
+echo "  --operation Write \\"
+echo "  --topic $TARGET_TOPIC"
+echo ""
+echo "========================================="
+echo "Note: Actual ACL setup depends on your"
+echo "Kafka authorization configuration."
+echo "========================================="
+

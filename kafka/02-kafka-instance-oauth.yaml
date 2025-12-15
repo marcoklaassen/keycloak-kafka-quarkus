@@ -1,0 +1,121 @@
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: controller
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  replicas: 3
+  roles:
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: ephemeral
+        kraftMetadata: shared
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: ephemeral
+        kraftMetadata: shared
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.0.0
+    metadataVersion: 4.0-IV3
+    authorization:
+      type: keycloak
+      clientId: quarkus-kafka-client
+      tokenEndpointUri: https://keycloak-qkk.apps.ocp4.klaassen.click/realms/kafka/protocol/openid-connect/token
+      tlsTrustedCertificates:
+        - secretName: keycloak-tls-secret
+          certificate: tls.crt
+      disableTlsHostnameVerification: true
+      superUsers:
+        - quarkus-kafka-client
+        - User:quarkus-kafka-client
+        - service-account-quarkus-kafka-client
+        - console
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        authentication:
+          type: scram-sha-512
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: scram-sha-512
+      - name: oauth
+        port: 9094
+        type: internal
+        tls: true
+        authentication:
+          type: oauth
+          validIssuerUri: https://keycloak-qkk.apps.ocp4.klaassen.click/realms/kafka
+          jwksEndpointUri: https://keycloak-qkk.apps.ocp4.klaassen.click/realms/kafka/protocol/openid-connect/certs
+          tlsTrustedCertificates:
+            - secretName: keycloak-tls-secret
+              certificate: tls.crt
+          disableTlsHostnameVerification: true
+          userNameClaim: azp
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: console
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  authentication:
+    type: scram-sha-512
+  # Note: Authorization is handled by Keycloak (cluster uses type: keycloak)
+  # The user is added to superUsers in the Kafka cluster configuration
+---
+apiVersion: console.streamshub.github.com/v1alpha1
+kind: Console
+metadata:
+  name: kafka-keycloak-console
+spec:
+  hostname: kafka-keycloak-console.apps.ocp4.klaassen.click
+  kafkaClusters:
+    - credentials:
+        kafkaUser:
+          name: console
+      listener: plain
+      name: kafka
+      namespace: qkk
