@@ -5,7 +5,7 @@ metadata:
   labels:
     app: quarkus-kafka-oauth
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: quarkus-kafka-oauth

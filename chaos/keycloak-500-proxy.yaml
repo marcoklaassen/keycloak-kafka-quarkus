@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-500-proxy
+  namespace: qkk
+spec:
+  selector:
+    app: keycloak-500-proxy
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-500-proxy
+  namespace: qkk
+  labels:
+    app: keycloak-500-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak-500-proxy
+  template:
+    metadata:
+      labels:
+        app: keycloak-500-proxy
+    spec:
+      containers:
+      - name: proxy
+        image: python:3.11-slim
+        command: ["python3", "/app/proxy.py", "8080"]
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # URL of the real Keycloak instance to forward requests to
+        - name: KEYCLOAK_URL
+          value: "https://keycloak-qkk.apps.ocp4.klaassen.click"
+        # Set FAIL_TOKEN_ENDPOINT=true to also fail /token endpoint (not just /introspect)
+        - name: FAIL_TOKEN_ENDPOINT
+          value: "false"
+        # Set FAIL_ALL=true to fail all endpoints (disables forwarding)
+        - name: FAIL_ALL
+          value: "false"
+        volumeMounts:
+        - name: proxy-script
+          mountPath: /app
+          readOnly: true
+      volumes:
+      - name: proxy-script
+        configMap:
+          name: keycloak-500-proxy-script
+          defaultMode: 0755
+# Note: We don't need a separate route for the proxy
+# The Keycloak route will be patched to point to this service
+
